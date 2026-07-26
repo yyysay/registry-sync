@@ -46,6 +46,7 @@ func SyncCommand(
 
 	e := engine.New(
 		copier.New(),
+		nil,
 	)
 
 	ctx := context.Background()
@@ -62,6 +63,16 @@ func SyncCommand(
 	fmt.Println("SYNC RESULT")
 
 	for _, result := range results {
+
+		if result.Cached {
+
+			fmt.Println(
+				"CACHED:",
+				result.Image,
+			)
+
+			continue
+		}
 
 		if result.Success {
 

@@ -39,21 +39,10 @@ func (e *Engine) ExecuteAll(
 				<-sem
 			}()
 
-			err := e.Execute(
+			result := e.Execute(
 				ctx,
 				plan,
 			)
-
-			result := model.ExecutionResult{
-
-				Image: buildImageName(
-					plan.Image,
-				),
-
-				Success: err == nil,
-
-				Error: err,
-			}
 
 			mu.Lock()
 
@@ -70,18 +59,4 @@ func (e *Engine) ExecuteAll(
 	wg.Wait()
 
 	return results
-}
-
-func buildImageName(
-	image model.Image,
-) string {
-
-	name := image.Repository
-
-	if image.Tag != "" {
-
-		name += ":" + image.Tag
-	}
-
-	return name
 }

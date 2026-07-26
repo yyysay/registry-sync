@@ -9,7 +9,34 @@ import (
 func (e *Engine) Execute(
 	ctx context.Context,
 	plan model.Plan,
-) error {
+) model.ExecutionResult {
+
+	key := BuildCacheKey(
+		plan,
+	)
+
+	result := model.ExecutionResult{
+		Image: key,
+	}
+
+	// Cache Check
+	//
+	// hit:
+	//     skip copy
+	//
+	if e.cache != nil {
+
+		if e.cache.Check(
+			ctx,
+			key,
+		) {
+
+			result.Success = true
+			result.Cached = true
+
+			return result
+		}
+	}
 
 	sources := ResolveSources(plan)
 
@@ -38,7 +65,9 @@ func (e *Engine) Execute(
 			)
 
 			if err == nil {
+
 				lastErr = nil
+
 				break
 			}
 
@@ -46,9 +75,35 @@ func (e *Engine) Execute(
 		}
 
 		if lastErr != nil {
-			return lastErr
+
+			result.Success = false
+			result.Error = lastErr
+
+			return result
 		}
 	}
 
-	return nil
+	// Cache Save
+	//
+	// copy 全部成功后记录
+	//
+	if e.cache != nil {
+
+		err := e.cache.Save(
+			ctx,
+			key,
+		)
+
+		if err != nil {
+
+			result.Success = false
+			result.Error = err
+
+			return result
+		}
+	}
+
+	result.Success = true
+
+	return result
 }

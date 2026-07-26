@@ -5,5 +5,7 @@ type ExecutionResult struct {
 
 	Success bool
 
+	Cached bool
+
 	Error error
 }
