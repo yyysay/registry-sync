@@ -14,6 +14,15 @@ func SyncCommand(
 	args []string,
 ) error {
 
+	workers, err := ParseWorkers(
+		args,
+		2,
+	)
+
+	if err != nil {
+		return err
+	}
+
 	if len(args) < 1 {
 
 		return fmt.Errorf(
@@ -41,20 +50,18 @@ func SyncCommand(
 
 	ctx := context.Background()
 
-	for _, plan := range plans {
+	err = e.ExecuteAll(
+		ctx,
+		plans,
+		workers,
+	)
 
-		err := e.Execute(
-			ctx,
-			plan,
+	if err != nil {
+
+		return fmt.Errorf(
+			"sync failed: %w",
+			err,
 		)
-
-		if err != nil {
-
-			return fmt.Errorf(
-				"sync failed: %w",
-				err,
-			)
-		}
 	}
 
 	return nil
