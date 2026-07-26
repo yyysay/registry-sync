@@ -11,13 +11,18 @@ func (e *Engine) ExecuteAll(
 	ctx context.Context,
 	plans []model.Plan,
 	workers int,
-) error {
+) []model.ExecutionResult {
 
 	sem := make(chan struct{}, workers)
 
 	var wg sync.WaitGroup
 
-	var firstErr error
+	results := make(
+		[]model.ExecutionResult,
+		0,
+		len(plans),
+	)
+
 	var mu sync.Mutex
 
 	for _, plan := range plans {
@@ -29,6 +34,7 @@ func (e *Engine) ExecuteAll(
 			defer wg.Done()
 
 			sem <- struct{}{}
+
 			defer func() {
 				<-sem
 			}()
@@ -38,21 +44,44 @@ func (e *Engine) ExecuteAll(
 				plan,
 			)
 
-			if err != nil {
+			result := model.ExecutionResult{
 
-				mu.Lock()
+				Image: buildImageName(
+					plan.Image,
+				),
 
-				if firstErr == nil {
-					firstErr = err
-				}
+				Success: err == nil,
 
-				mu.Unlock()
+				Error: err,
 			}
+
+			mu.Lock()
+
+			results = append(
+				results,
+				result,
+			)
+
+			mu.Unlock()
 
 		}(plan)
 	}
 
 	wg.Wait()
 
-	return firstErr
+	return results
+}
+
+func buildImageName(
+	image model.Image,
+) string {
+
+	name := image.Repository
+
+	if image.Tag != "" {
+
+		name += ":" + image.Tag
+	}
+
+	return name
 }

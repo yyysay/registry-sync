@@ -50,17 +50,50 @@ func SyncCommand(
 
 	ctx := context.Background()
 
-	err = e.ExecuteAll(
+	results := e.ExecuteAll(
 		ctx,
 		plans,
 		workers,
 	)
 
-	if err != nil {
+	var failed int
+
+	fmt.Println()
+	fmt.Println("SYNC RESULT")
+
+	for _, result := range results {
+
+		if result.Success {
+
+			fmt.Println(
+				"SUCCESS:",
+				result.Image,
+			)
+
+			continue
+		}
+
+		failed++
+
+		fmt.Println(
+			"FAILED:",
+			result.Image,
+		)
+
+		if result.Error != nil {
+
+			fmt.Println(
+				"  ERROR:",
+				result.Error,
+			)
+		}
+	}
+
+	if failed > 0 {
 
 		return fmt.Errorf(
-			"sync failed: %w",
-			err,
+			"sync failed: %d task(s) failed",
+			failed,
 		)
 	}
 
