@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"registry-sync/cache"
 	"registry-sync/config"
 	"registry-sync/copier"
 	"registry-sync/engine"
@@ -40,13 +41,14 @@ func SyncCommand(
 
 	plans := planner.Build(cfg)
 
-	fmt.Println(
-		planner.Dump(plans),
+	c := cache.NewFileCache(
+		".registry-sync/cache.json",
 	)
 
 	e := engine.New(
 		copier.New(),
-		nil,
+		c,
+		engine.NewCraneResolver(),
 	)
 
 	ctx := context.Background()

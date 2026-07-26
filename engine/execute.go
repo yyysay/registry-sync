@@ -9,38 +9,79 @@ import (
 func (e *Engine) Execute(
 	ctx context.Context,
 	plan model.Plan,
-) model.ExecutionResult {
+) []model.ExecutionResult {
 
-	key := BuildCacheKey(
-		plan,
+	results := make(
+		[]model.ExecutionResult,
+		0,
+		len(plan.Targets),
 	)
 
-	result := model.ExecutionResult{
-		Image: key,
+	resolved := model.ResolvedImage{
+		Registry:   plan.Image.Registry,
+		Repository: plan.Image.Repository,
+		Tag:        plan.Image.Tag,
+		Platform:   plan.Image.Platform,
 	}
 
-	// Cache Check
-	//
-	// hit:
-	//     skip copy
-	//
-	if e.cache != nil {
+	if e.resolver != nil {
 
-		if e.cache.Check(
+		image, err := e.resolver.Resolve(
 			ctx,
-			key,
-		) {
+			plan.Image,
+		)
 
-			result.Success = true
-			result.Cached = true
+		if err != nil {
 
-			return result
+			return []model.ExecutionResult{
+				{
+					Image:   BuildImageRef(plan.Image),
+					Success: false,
+					Error:   err,
+				},
+			}
 		}
+
+		resolved = image
 	}
 
 	sources := ResolveSources(plan)
 
 	for _, target := range plan.Targets {
+
+		key := BuildCacheKey(
+			resolved,
+			target,
+		)
+
+		result := model.ExecutionResult{
+			Image:  key,
+			Target: target.Name,
+		}
+
+		// Cache Check
+		//
+		// hit:
+		//     skip this target
+		//
+		if e.cache != nil {
+
+			if e.cache.Check(
+				ctx,
+				key,
+			) {
+
+				result.Success = true
+				result.Cached = true
+
+				results = append(
+					results,
+					result,
+				)
+
+				continue
+			}
+		}
 
 		targetImage := BuildTargetImage(
 			plan.Image,
@@ -79,31 +120,46 @@ func (e *Engine) Execute(
 			result.Success = false
 			result.Error = lastErr
 
-			return result
+			results = append(
+				results,
+				result,
+			)
+
+			continue
 		}
-	}
 
-	// Cache Save
-	//
-	// copy 全部成功后记录
-	//
-	if e.cache != nil {
+		// Cache Save
+		//
+		// 单个 target 成功后记录
+		//
+		if e.cache != nil {
 
-		err := e.cache.Save(
-			ctx,
-			key,
+			err := e.cache.Save(
+				ctx,
+				key,
+			)
+
+			if err != nil {
+
+				result.Success = false
+				result.Error = err
+
+				results = append(
+					results,
+					result,
+				)
+
+				continue
+			}
+		}
+
+		result.Success = true
+
+		results = append(
+			results,
+			result,
 		)
-
-		if err != nil {
-
-			result.Success = false
-			result.Error = err
-
-			return result
-		}
 	}
 
-	result.Success = true
-
-	return result
+	return results
 }

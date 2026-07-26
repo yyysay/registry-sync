@@ -39,7 +39,7 @@ func (e *Engine) ExecuteAll(
 				<-sem
 			}()
 
-			result := e.Execute(
+			taskResults := e.Execute(
 				ctx,
 				plan,
 			)
@@ -48,7 +48,7 @@ func (e *Engine) ExecuteAll(
 
 			results = append(
 				results,
-				result,
+				taskResults...,
 			)
 
 			mu.Unlock()

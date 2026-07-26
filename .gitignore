@@ -11,3 +11,6 @@ registry-sync.exe
 # macOS
 .DS_Store
 **/.DS_Store
+
+# cache
+.registry-sync

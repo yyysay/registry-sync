@@ -8,16 +8,19 @@ import (
 )
 
 func BuildCacheKey(
-	plan model.Plan,
+	image model.ResolvedImage,
+	target model.Target,
 ) string {
 
 	return fmt.Sprintf(
-		"%s:%s:%s",
-		plan.Image.Repository,
-		plan.Image.Tag,
+		"%s/%s@%s:%s:%s",
+		image.Registry,
+		image.Repository,
+		image.Digest,
 		strings.Join(
-			plan.Image.Platform,
+			image.Platform,
 			",",
 		),
+		target.Name,
 	)
 }
