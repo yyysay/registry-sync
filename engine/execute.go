@@ -42,6 +42,12 @@ func (e *Engine) Execute(
 		len(plan.Targets),
 	)
 
+	metadata := model.ImageMetadata{
+		Source:   source,
+		Digest:   resolved.Digest,
+		Platform: resolved.Platform,
+	}
+
 	for _, target := range plan.Targets {
 
 		result :=
@@ -50,6 +56,7 @@ func (e *Engine) Execute(
 				plan,
 				resolved,
 				source,
+				metadata,
 				target,
 			)
 

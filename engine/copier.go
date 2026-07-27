@@ -1,6 +1,10 @@
 package engine
 
-import "context"
+import (
+	"context"
+
+	"registry-sync/model"
+)
 
 type Copier interface {
 	Copy(
@@ -8,5 +12,6 @@ type Copier interface {
 		source string,
 		target string,
 		platform []string,
+		metadata model.ImageMetadata,
 	) error
 }

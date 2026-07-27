@@ -11,6 +11,7 @@ func (e *Engine) executeTarget(
 	plan model.Plan,
 	resolved model.ResolvedImage,
 	source string,
+	metadata model.ImageMetadata,
 	target model.Target,
 ) model.ExecutionResult {
 
@@ -55,6 +56,7 @@ func (e *Engine) executeTarget(
 		source,
 		targetImage,
 		plan.Image.Platform,
+		metadata,
 	)
 
 	if err != nil {

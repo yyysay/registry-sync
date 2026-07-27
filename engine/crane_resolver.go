@@ -34,6 +34,8 @@ func (r *CraneResolver) Resolve(
 
 	return model.ResolvedImage{
 
+		Source: source,
+
 		Registry: image.Registry,
 
 		Repository: image.Repository,
