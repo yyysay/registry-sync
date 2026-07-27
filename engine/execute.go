@@ -28,7 +28,6 @@ func (e *Engine) Execute(
 
 	// Resolve digest
 	//
-	// mirror 优先
 	// origin fallback
 	//
 	if e.resolver != nil {

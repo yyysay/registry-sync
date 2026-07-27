@@ -18,29 +18,6 @@ func Dump(plans []model.Plan) string {
 		return b.String()
 	}
 
-	// mirrors 只输出一次
-	if len(plans[0].Mirrors) > 0 {
-
-		b.WriteString("MIRRORS\n")
-		b.WriteString("--------------------------------------------------------------------\n")
-
-		for _, mirror := range plans[0].Mirrors {
-
-			b.WriteString("  ")
-			b.WriteString(mirror.URL)
-
-			if mirror.Type != "" {
-				b.WriteString(" (")
-				b.WriteString(fmt.Sprint(mirror.Type))
-				b.WriteString(")")
-			}
-
-			b.WriteString("\n")
-		}
-
-		b.WriteString("\n")
-	}
-
 	b.WriteString("COPY PLAN\n")
 	b.WriteString("--------------------------------------------------------------------\n")
 

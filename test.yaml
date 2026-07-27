@@ -9,16 +9,6 @@ dest:
   local:
     registry: local.example
 
-mirror:
-  - name: aliyun
-    url: aliyun.example
-    type: flatten
-    # default: nill
-    # flatten => basename
-
-  - name: local
-    url: local.example
-
 # 全局指定
 sync:
   - aliyun
