@@ -63,6 +63,9 @@ func (c *CraneCopier) Copy(
 		configFile.Config.Labels = map[string]string{}
 	}
 
+	configFile.Config.Labels["org.registry-sync.version"] =
+		"1"
+
 	configFile.Config.Labels["org.registry-sync.source"] =
 		metadata.Source
 

@@ -10,6 +10,8 @@ import (
 	"github.com/google/go-containerregistry/pkg/crane"
 )
 
+const RegistrySyncMetadataVersion = "1"
+
 type MetadataResolver interface {
 	ResolveMetadata(
 		ctx context.Context,
@@ -53,6 +55,16 @@ func (r *CraneMetadataResolver) ResolveMetadata(
 
 		return model.ImageMetadata{}, fmt.Errorf(
 			"image has no registry-sync metadata",
+		)
+	}
+
+	version := labels["org.registry-sync.version"]
+
+	if version != RegistrySyncMetadataVersion {
+
+		return model.ImageMetadata{}, fmt.Errorf(
+			"unsupported registry-sync metadata version: %s",
+			version,
 		)
 	}
 
