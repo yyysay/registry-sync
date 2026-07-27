@@ -3,23 +3,23 @@ package engine
 type Engine struct {
 	copier Copier
 
-	cache Cache
-
 	resolver Resolver
+
+	metadataResolver MetadataResolver
 }
 
 func New(
 	copier Copier,
-	cache Cache,
 	resolver Resolver,
+	metadataResolver MetadataResolver,
 ) *Engine {
 
 	return &Engine{
 
 		copier: copier,
 
-		cache: cache,
-
 		resolver: resolver,
+
+		metadataResolver: metadataResolver,
 	}
 }

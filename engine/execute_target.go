@@ -25,25 +25,33 @@ func (e *Engine) executeTarget(
 		Target: target.Name,
 	}
 
-	// Cache Check
-	if e.cache != nil {
-
-		if e.cache.Check(
-			ctx,
-			key,
-		) {
-
-			result.Success = true
-			result.Cached = true
-
-			return result
-		}
-	}
-
 	targetImage := BuildTargetImage(
 		plan.Image,
 		target,
 	)
+
+	// Metadata Check
+	//
+	// 读取目标镜像 label
+	//
+	if e.metadataResolver != nil {
+
+		targetMetadata, err := e.metadataResolver.ResolveMetadata(
+			ctx,
+			targetImage,
+		)
+
+		if err == nil {
+
+			if targetMetadata.Digest == resolved.Digest {
+
+				result.Success = true
+				result.Cached = true
+
+				return result
+			}
+		}
+	}
 
 	dumpCopyTask(
 		source,
@@ -64,22 +72,6 @@ func (e *Engine) executeTarget(
 		result.Error = err
 
 		return result
-	}
-
-	// Cache Save
-	if e.cache != nil {
-
-		err := e.cache.Save(
-			ctx,
-			key,
-		)
-
-		if err != nil {
-
-			result.Error = err
-
-			return result
-		}
 	}
 
 	result.Success = true
