@@ -24,28 +24,48 @@ func (e *Engine) Execute(
 		Platform:   plan.Image.Platform,
 	}
 
+	sources := ResolveSources(plan)
+
+	// Resolve digest
+	//
+	// mirror 优先
+	// origin fallback
+	//
 	if e.resolver != nil {
 
-		image, err := e.resolver.Resolve(
-			ctx,
-			plan.Image,
-		)
+		var lastErr error
 
-		if err != nil {
+		for _, source := range sources {
+
+			image, err := e.resolver.Resolve(
+				ctx,
+				source,
+				plan.Image,
+			)
+
+			if err == nil {
+
+				resolved = image
+
+				lastErr = nil
+
+				break
+			}
+
+			lastErr = err
+		}
+
+		if lastErr != nil {
 
 			return []model.ExecutionResult{
 				{
 					Image:   BuildImageRef(plan.Image),
 					Success: false,
-					Error:   err,
+					Error:   lastErr,
 				},
 			}
 		}
-
-		resolved = image
 	}
-
-	sources := ResolveSources(plan)
 
 	for _, target := range plan.Targets {
 
@@ -60,10 +80,6 @@ func (e *Engine) Execute(
 		}
 
 		// Cache Check
-		//
-		// hit:
-		//     skip this target
-		//
 		if e.cache != nil {
 
 			if e.cache.Check(
@@ -129,9 +145,6 @@ func (e *Engine) Execute(
 		}
 
 		// Cache Save
-		//
-		// 单个 target 成功后记录
-		//
 		if e.cache != nil {
 
 			err := e.cache.Save(

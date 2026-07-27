@@ -18,18 +18,12 @@ func NewCraneResolver() *CraneResolver {
 
 func (r *CraneResolver) Resolve(
 	ctx context.Context,
+	source string,
 	image model.Image,
 ) (model.ResolvedImage, error) {
 
-	ref := image.Registry + "/" + image.Repository
-
-	if image.Tag != "" {
-
-		ref += ":" + image.Tag
-	}
-
 	digest, err := crane.Digest(
-		ref,
+		source,
 		crane.WithContext(ctx),
 	)
 
