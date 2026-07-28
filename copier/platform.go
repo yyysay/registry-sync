@@ -8,19 +8,13 @@ import (
 )
 
 func buildPlatformOption(
-	platform []string,
+	platform string,
 ) []crane.Option {
 
 	var opts []crane.Option
 
-	// 多平台不指定 WithPlatform
-	// 保留 manifest list
-	if len(platform) != 1 {
-		return opts
-	}
-
 	parts := strings.Split(
-		platform[0],
+		platform,
 		"/",
 	)
 
