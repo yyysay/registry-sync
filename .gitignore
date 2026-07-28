@@ -1,8 +1,4 @@
 # private
-# ToAliyun.yaml
-# ToLocal.yaml
-*.yaml
-*.yml
 
 # cli
 /registry-sync

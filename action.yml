@@ -1,0 +1,20 @@
+name: registry-sync
+description: Sync container images between registries
+
+inputs:
+  config:
+    description: registry-sync yaml config file
+    required: true
+
+runs:
+  using: composite
+
+  steps:
+    - name: Run registry-sync
+      shell: bash
+      run: |
+        chmod +x "${{ github.action_path }}/dist/registry-sync-linux-amd64"
+
+        "${{ github.action_path }}/dist/registry-sync-linux-amd64" \
+          sync \
+          "${{ inputs.config }}"
