@@ -30,16 +30,51 @@ func (e *Engine) executeTarget(
 		target,
 	)
 
-	// Metadata Check
+	// Restore Check
 	//
-	// 读取目标镜像 label
+	// 判断 source 是否为 registry-sync 生成的镜像
+	//
+	// 如果存在:
+	//
+	// org.registry-sync.source
+	//
+	// 则根据原始 source 恢复干净路径
 	//
 	if e.metadataResolver != nil {
 
-		targetMetadata, err := e.metadataResolver.ResolveMetadata(
-			ctx,
-			targetImage,
-		)
+		sourceMetadata, err :=
+			e.metadataResolver.ResolveMetadata(
+				ctx,
+				source,
+			)
+
+		if err == nil &&
+			sourceMetadata.Source != "" {
+
+			restoreTarget :=
+				BuildRestoreTarget(
+					sourceMetadata.Source,
+					target,
+				)
+
+			if restoreTarget != "" {
+
+				targetImage = restoreTarget
+			}
+		}
+	}
+
+	// Metadata Check
+	//
+	// 判断目标镜像是否已经同步过相同 digest
+	//
+	if e.metadataResolver != nil {
+
+		targetMetadata, err :=
+			e.metadataResolver.ResolveMetadata(
+				ctx,
+				targetImage,
+			)
 
 		if err == nil {
 
