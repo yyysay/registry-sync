@@ -1,0 +1,62 @@
+package engine
+
+import (
+	"context"
+	"sync"
+
+	"registry-sync/model"
+)
+
+func (e *Engine) ExecuteAll(
+	ctx context.Context,
+	plans []model.Plan,
+	workers int,
+) []model.ExecutionResult {
+
+	sem := make(chan struct{}, workers)
+
+	var wg sync.WaitGroup
+
+	results := make(
+		[]model.ExecutionResult,
+		0,
+		len(plans),
+	)
+
+	var mu sync.Mutex
+
+	for _, plan := range plans {
+
+		wg.Add(1)
+
+		go func(plan model.Plan) {
+
+			defer wg.Done()
+
+			sem <- struct{}{}
+
+			defer func() {
+				<-sem
+			}()
+
+			taskResults := e.Execute(
+				ctx,
+				plan,
+			)
+
+			mu.Lock()
+
+			results = append(
+				results,
+				taskResults...,
+			)
+
+			mu.Unlock()
+
+		}(plan)
+	}
+
+	wg.Wait()
+
+	return results
+}

@@ -1,0 +1,44 @@
+dest:
+  aliyun:
+    registry: registry.example
+    namespace: test # default: nill
+    flatten: true # default: false
+    auth: # default: nill
+      username: ${username}
+      password: ${password}
+  local:
+    registry: local.example
+
+# 全局指定
+sync:
+  - aliyun
+platform:
+  - linux/arm64
+
+sources:
+  docker.io:
+    sync:
+      - local
+    platform:
+      - linux/arm/v7
+    images:
+      cloudflare/cloudflared:
+        tags:
+          - latest
+        platform:
+          - linux/arm64
+      nginx:
+        platform:
+          - linux/arm64
+      joxit/docker-registry-ui: main
+      gdy666/lucky: v2
+      louislam/uptime-kuma: 2
+
+  ghcr.io:
+    sync:
+      - local
+      - aliyun
+    images:
+      finb/bark-server:
+      usememos/memos: 0.29.1
+      sagernet/sing-box: [ latest, latest-testing ]

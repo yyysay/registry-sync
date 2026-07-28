@@ -2,153 +2,19 @@ name: registry-sync
 description: Sync container images between registries
 
 inputs:
-  src:
-    description: Single source image
-    required: false
-  images:
-    description: Multiple images list (inline)
-    required: false
-  base:
-    description: Base image manifest file
-    required: false
-    default: images.txt
-  src-prefix:
-    description: Source registry prefix
-    required: false
-  src-flatten:
-    description: Flatten source path
-    required: false
-    default: "false"
-  dst-prefix:
-    description: Destination registry prefix
+  config:
+    description: registry-sync yaml config file
     required: true
-  dst-flatten:
-    description: Flatten destination path
-    required: false
-    default: "false"
-  platform:
-    description: Target platform
-    required: false
-    default: linux/amd64
-  concurrency:
-    description: Worker concurrency
-    required: false
-    default: "4"
-  retries:
-    description: Retry attempts
-    required: false
-    default: "3"
-  dry-run:
-    description: Dry run mode
-    required: false
-    default: "false"
 
 runs:
   using: composite
+
   steps:
-    - name: Install registry-sync
-      shell: bash
-      run: |
-        set -e
-        echo "Installing registry-sync..."
-        chmod +x "$GITHUB_ACTION_PATH/bin/registry-sync"
-        sudo cp "$GITHUB_ACTION_PATH/bin/registry-sync" /usr/local/bin/registry-sync
-        registry-sync -h || true
-
-    - name: Prepare images file
-      if: inputs.images != ''
-      shell: bash
-      run: |
-        set -e
-        cat << 'EOF' > /tmp/images.txt
-        ${{ inputs.images }}
-        EOF
-        echo "Prepared images from inline input."
-
-    - name: Show configuration
-      shell: bash
-      run: |
-        echo "================================"
-        echo "registry-sync configuration"
-        echo "================================"
-        echo "src:           ${{ inputs.src }}"
-        echo "base:          ${{ inputs.base }}"
-        echo "src-prefix:    ${{ inputs.src-prefix }}"
-        echo "src-flatten:   ${{ inputs.src-flatten }}"
-        echo "dst-prefix:    ${{ inputs.dst-prefix }}"
-        echo "dst-flatten:   ${{ inputs.dst-flatten }}"
-        echo "platform:      ${{ inputs.platform }}"
-        echo "concurrency:   ${{ inputs.concurrency }}"
-        echo "retries:       ${{ inputs.retries }}"
-        echo "dry-run:       ${{ inputs.dry-run }}"
-        echo "================================"
-
     - name: Run registry-sync
       shell: bash
       run: |
-        set -e
+        chmod +x "${{ github.action_path }}/dist/registry-sync-linux-amd64"
 
-        SRC_FLATTEN=""
-        DST_FLATTEN=""
-        DRY_RUN=""
-
-        if [ "${{ inputs.src-flatten }}" = "true" ]; then
-          SRC_FLATTEN="--src-flatten"
-        fi
-
-        if [ "${{ inputs.dst-flatten }}" = "true" ]; then
-          DST_FLATTEN="--dst-flatten"
-        fi
-
-        if [ "${{ inputs.dry-run }}" = "true" ]; then
-          DRY_RUN="--dry-run"
-        fi
-
-        SRC_PREFIX_ARG=""
-        if [ -n "${{ inputs.src-prefix }}" ]; then
-          SRC_PREFIX_ARG="--src-prefix ${{ inputs.src-prefix }}"
-        fi
-
-        if [ -n "${{ inputs.src }}" ]; then
-          echo "Mode: single image"
-          registry-sync sync \
-            --src "${{ inputs.src }}" \
-            ${SRC_PREFIX_ARG} \
-            --dst-prefix "${{ inputs.dst-prefix }}" \
-            $SRC_FLATTEN \
-            $DST_FLATTEN \
-            $DRY_RUN \
-            --platform "${{ inputs.platform }}" \
-            --concurrency "${{ inputs.concurrency }}" \
-            --retries "${{ inputs.retries }}"
-
-        elif [ -n "${{ inputs.images }}" ]; then
-          echo "Mode: inline images"
-          registry-sync sync \
-            --base /tmp/images.txt \
-            ${SRC_PREFIX_ARG} \
-            --dst-prefix "${{ inputs.dst-prefix }}" \
-            $SRC_FLATTEN \
-            $DST_FLATTEN \
-            $DRY_RUN \
-            --platform "${{ inputs.platform }}" \
-            --concurrency "${{ inputs.concurrency }}" \
-            --retries "${{ inputs.retries }}"
-
-        elif [ -n "${{ inputs.base }}" ]; then
-          echo "Mode: image file"
-          registry-sync sync \
-            --base "${{ inputs.base }}" \
-            ${SRC_PREFIX_ARG} \
-            --dst-prefix "${{ inputs.dst-prefix }}" \
-            $SRC_FLATTEN \
-            $DST_FLATTEN \
-            $DRY_RUN \
-            --platform "${{ inputs.platform }}" \
-            --concurrency "${{ inputs.concurrency }}" \
-            --retries "${{ inputs.retries }}"
-
-        else
-          echo "Error: no images specified"
-          exit 1
-        fi
+        "${{ github.action_path }}/dist/registry-sync-linux-amd64" \
+          sync \
+          "${{ inputs.config }}"
