@@ -7,9 +7,7 @@ import (
 	"registry-sync/model"
 
 	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 )
 
@@ -29,20 +27,53 @@ func (c *CraneCopier) Copy(
 	metadata model.ImageMetadata,
 ) error {
 
-	opts := []crane.Option{
-		crane.WithContext(ctx),
-		crane.WithAuthFromKeychain(authn.DefaultKeychain),
+	// 多平台:
+	//
+	// linux/amd64
+	// linux/arm64
+	//
+	// 生成 OCI Image Index
+	//
+	if len(platform) > 1 {
+
+		return c.copyMulti(
+			ctx,
+			source,
+			target,
+			platform,
+			metadata,
+		)
 	}
 
-	opts = append(
-		opts,
-		buildPlatformOption(platform)...,
-	)
+	// 单平台:
+	//
+	// 指定 platform
+	// 只复制对应架构
 
-	image, err := crane.Pull(
-		source,
-		opts...,
-	)
+	if len(platform) == 1 {
+
+		return c.copySingle(
+			ctx,
+			source,
+			target,
+			platform[0],
+			metadata,
+		)
+	}
+
+	// 未指定 platform
+	//
+	// 保持原行为:
+	//
+	// 保留完整 manifest list
+
+	image, err :=
+		pullImage(
+			ctx,
+			source,
+			"",
+			metadata,
+		)
 
 	if err != nil {
 
@@ -51,7 +82,10 @@ func (c *CraneCopier) Copy(
 		return err
 	}
 
-	configFile, err := image.ConfigFile()
+	ref, err :=
+		name.ParseReference(
+			target,
+		)
 
 	if err != nil {
 
@@ -60,49 +94,15 @@ func (c *CraneCopier) Copy(
 		return err
 	}
 
-	if configFile.Config.Labels == nil {
-
-		configFile.Config.Labels = map[string]string{}
-	}
-
-	configFile.Config.Labels["org.registry-sync.version"] =
-		"1"
-
-	configFile.Config.Labels["org.registry-sync.source"] =
-		metadata.Source
-
-	configFile.Config.Labels["org.registry-sync.digest"] =
-		metadata.Digest
-
-	image, err = mutate.ConfigFile(
-		image,
-		configFile,
-	)
-
-	if err != nil {
-
-		dumpFailed(err)
-
-		return err
-	}
-
-	ref, err := name.ParseReference(
-		target,
-	)
-
-	if err != nil {
-
-		dumpFailed(err)
-
-		return err
-	}
-
-	err = remote.Write(
-		ref,
-		image,
-		remote.WithContext(ctx),
-		remote.WithAuthFromKeychain(authn.DefaultKeychain),
-	)
+	err =
+		remote.Write(
+			ref,
+			image,
+			remote.WithContext(ctx),
+			remote.WithAuthFromKeychain(
+				authn.DefaultKeychain,
+			),
+		)
 
 	if err != nil {
 

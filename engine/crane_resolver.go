@@ -2,10 +2,12 @@ package engine
 
 import (
 	"context"
+	"strings"
 
 	"registry-sync/model"
 
 	"github.com/google/go-containerregistry/pkg/crane"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 )
 
 type CraneResolver struct {
@@ -22,10 +24,51 @@ func (r *CraneResolver) Resolve(
 	image model.Image,
 ) (model.ResolvedImage, error) {
 
-	digest, err := crane.Digest(
-		source,
+	opts := []crane.Option{
 		crane.WithContext(ctx),
+	}
+
+	// 如果指定单个平台:
+	//
+	// 例如:
+	//
+	// linux/amd64
+	//
+	// 则拉取对应 manifest
+	// 获取真实 platform digest
+	if len(image.Platform) == 1 {
+
+		parts := strings.Split(
+			image.Platform[0],
+			"/",
+		)
+
+		if len(parts) == 2 {
+
+			opts = append(
+				opts,
+				crane.WithPlatform(
+					&v1.Platform{
+						OS:           parts[0],
+						Architecture: parts[1],
+					},
+				),
+			)
+		}
+	}
+
+	img, err := crane.Pull(
+		source,
+		opts...,
 	)
+
+	if err != nil {
+
+		return model.ResolvedImage{}, err
+	}
+
+	digest, err :=
+		img.Digest()
 
 	if err != nil {
 
@@ -42,7 +85,7 @@ func (r *CraneResolver) Resolve(
 
 		Tag: image.Tag,
 
-		Digest: digest,
+		Digest: digest.String(),
 
 		Platform: image.Platform,
 	}, nil
