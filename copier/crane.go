@@ -6,6 +6,7 @@ import (
 	"registry-sync/engine"
 	"registry-sync/model"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
@@ -30,6 +31,7 @@ func (c *CraneCopier) Copy(
 
 	opts := []crane.Option{
 		crane.WithContext(ctx),
+		crane.WithAuthFromKeychain(authn.DefaultKeychain),
 	}
 
 	opts = append(
@@ -98,6 +100,8 @@ func (c *CraneCopier) Copy(
 	err = remote.Write(
 		ref,
 		image,
+		remote.WithContext(ctx),
+		remote.WithAuthFromKeychain(authn.DefaultKeychain),
 	)
 
 	if err != nil {
