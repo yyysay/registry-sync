@@ -1,20 +1,30 @@
-name: registry-sync
+name: Registry Sync
 description: Sync container images between registries
+
+author: yangtudou
+
+branding:
+  icon: refresh-cw
+  color: blue
 
 inputs:
   config:
-    description: registry-sync yaml config file
+    description: Path to the registry-sync configuration file
     required: true
+
+  workers:
+    description: Number of parallel workers
+    required: false
+    default: "2"
 
 runs:
   using: composite
-
   steps:
-    - name: Run registry-sync
+    - name: Sync images
       shell: bash
-      run: |
-        chmod +x "${{ github.action_path }}/dist/registry-sync-linux-amd64"
-
-        "${{ github.action_path }}/dist/registry-sync-linux-amd64" \
-          sync \
-          "${{ inputs.config }}"
+      run: >
+        ${{ github.action_path }}/dist/registry-sync-linux-amd64
+        sync
+        ${{ inputs.config }}
+        --workers
+        ${{ inputs.workers }}
